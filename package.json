@@ -1,0 +1,23 @@
+{
+  "family": "seedit",
+  "name": "tweenMax",
+  "version": "0.0.1",
+  "description": "GreenSock-JS",
+  "homepage": "https://github.com/greensock/GreenSock-JS",
+  "author": "greensock",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:greensock/GreenSock-JS.git"
+  },
+  "bugs": {
+    "url": ""
+  },
+  "keywords": [],
+  "licenses": "MIT",
+  "spm": {
+    "output": ["tweenMax.js"],
+    "alias": {},
+    "devAlias": {},
+    "engines": {}
+  }
+}
