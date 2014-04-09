@@ -1,15 +1,15 @@
-define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, module) {
+define("moe/tweenMax/1.11.6/tweenMax-debug", [], function(require, exports, module) {
     /*!
-     * VERSION: 1.11.2
-     * DATE: 2013-11-20
+     * VERSION: 1.11.6
+     * DATE: 2014-03-26
      * UPDATES AND DOCS AT: http://www.greensock.com
-     *
+     * 
      * Includes all of the following: TweenLite, TweenMax, TimelineLite, TimelineMax, EasePack, CSSPlugin, RoundPropsPlugin, BezierPlugin, AttrPlugin, DirectionalRotationPlugin
      *
-     * @license Copyright (c) 2008-2013, GreenSock. All rights reserved.
+     * @license Copyright (c) 2008-2014, GreenSock. All rights reserved.
      * This work is subject to the terms at http://www.greensock.com/terms_of_use.html or for
      * Club GreenSock members, the software agreement that was issued with your membership.
-     *
+     * 
      * @author: Jack Doyle, jack@greensock.com
      **/
     (window._gsQueue || (window._gsQueue = [])).push(function() {
@@ -25,7 +25,7 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                 //ensures that if there is any repeat, the totalDuration will get recalculated to accurately report it.
                 this.render = TweenMax.prototype.render;
             }, _tinyNum = 1e-10, _isSelector = TweenLite._internals.isSelector, _isArray = TweenLite._internals.isArray, p = TweenMax.prototype = TweenLite.to({}, .1, {}), _blankArray = [];
-            TweenMax.version = "1.11.2";
+            TweenMax.version = "1.11.6";
             p.constructor = TweenMax;
             p.kill()._gc = false;
             TweenMax.killTweensOf = TweenMax.killDelayedCallsTo = TweenLite.killTweensOf;
@@ -40,7 +40,7 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
             };
             p.updateTo = function(vars, resetDuration) {
                 var curRatio = this.ratio, p;
-                if (resetDuration && this.timeline && this._startTime < this._timeline._time) {
+                if (resetDuration && this._startTime < this._timeline._time) {
                     this._startTime = this._timeline._time;
                     this._uncache(false);
                     if (this._gc) {
@@ -56,6 +56,9 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                     if (resetDuration) {
                         this._initted = false;
                     } else {
+                        if (this._gc) {
+                            this._enabled(true, false);
+                        }
                         if (this._notifyPluginsOfEnabled && this._firstPT) {
                             TweenLite._onPluginEvent("_onDisable", this);
                         }
@@ -103,19 +106,23 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                     if (duration === 0) {
                         //zero-duration tweens are tricky because we must discern the momentum/direction of time in order to determine whether the starting values should be rendered or the ending values. If the "playhead" of its timeline goes past the zero-duration tween in the forward direction or lands directly on it, the end values should be rendered, but if the timeline's "playhead" moves past it in the backward direction (from a postitive time to a negative time), the starting values must be rendered.
                         rawPrevTime = this._rawPrevTime;
+                        if (this._startTime === this._timeline._duration) {
+                            //if a zero-duration tween is at the VERY end of a timeline and that timeline renders at its end, it will typically add a tiny bit of cushion to the render time to prevent rounding errors from getting in the way of tweens rendering their VERY end. If we then reverse() that timeline, the zero-duration tween will trigger its onReverseComplete even though technically the playhead didn't pass over it again. It's a very specific edge case we must accommodate.
+                            time = 0;
+                        }
                         if (time === 0 || rawPrevTime < 0 || rawPrevTime === _tinyNum) if (rawPrevTime !== time) {
                             force = true;
                             if (rawPrevTime > _tinyNum) {
                                 callback = "onReverseComplete";
                             }
                         }
-                        this._rawPrevTime = rawPrevTime = !suppressEvents || time ? time : _tinyNum;
+                        this._rawPrevTime = rawPrevTime = !suppressEvents || time || this._rawPrevTime === time ? time : _tinyNum;
                     }
                 } else if (time < 1e-7) {
                     //to work around occasional floating point math artifacts, round super small values to 0.
                     this._totalTime = this._time = this._cycle = 0;
                     this.ratio = this._ease._calcEnd ? this._ease.getRatio(0) : 0;
-                    if (prevTotalTime !== 0 || duration === 0 && this._rawPrevTime > _tinyNum) {
+                    if (prevTotalTime !== 0 || duration === 0 && this._rawPrevTime > 0 && this._rawPrevTime !== _tinyNum) {
                         callback = "onReverseComplete";
                         isComplete = this._reversed;
                     }
@@ -126,7 +133,7 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                             if (this._rawPrevTime >= 0) {
                                 force = true;
                             }
-                            this._rawPrevTime = rawPrevTime = !suppressEvents || time ? time : _tinyNum;
+                            this._rawPrevTime = rawPrevTime = !suppressEvents || time || this._rawPrevTime === time ? time : _tinyNum;
                         }
                     } else if (!this._initted) {
                         //if we render the very beginning (time == 0) of a fromTo(), we must force the render (normal tweens wouldn't need to render at a time of 0 when the prevTime was also 0). This is also mandatory to make sure overwriting kicks in immediately.
@@ -231,7 +238,7 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                         //if the tween is positioned at the VERY beginning (_startTime 0) of its parent timeline, it's illegal for the playhead to go back further, so we should not render the recorded startAt values.
                         this._startAt.render(time, suppressEvents, force);
                     }
-                    if (!suppressEvents) {
+                    if (!suppressEvents) if (this._totalTime !== prevTotalTime || isComplete) {
                         this._onUpdate.apply(this.vars.onUpdateScope || this, this.vars.onUpdateParams || _blankArray);
                     }
                 }
@@ -380,7 +387,7 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                     parent = TweenLite.selector(parent) || parent;
                 }
                 if (_isSelector(parent)) {
-                    parent = _slice(parent, 0);
+                    parent = _slice.call(parent, 0);
                 }
                 if (_isArray(parent)) {
                     i = parent.length;
@@ -538,7 +545,7 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                     callback.apply(scope || tween._timeline, params || _blankArray);
                 }
             }, _slice = _blankArray.slice, p = TimelineLite.prototype = new SimpleTimeline();
-            TimelineLite.version = "1.11.0";
+            TimelineLite.version = "1.11.6";
             p.constructor = TimelineLite;
             p.kill()._gc = false;
             p.to = function(target, duration, vars, position) {
@@ -554,7 +561,8 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                 var tl = new TimelineLite({
                     onComplete: onCompleteAll,
                     onCompleteParams: onCompleteAllParams,
-                    onCompleteScope: onCompleteAllScope
+                    onCompleteScope: onCompleteAllScope,
+                    smoothChildTiming: this.smoothChildTiming
                 }), i;
                 if (typeof targets === "string") {
                     targets = TweenLite.selector(targets) || targets;
@@ -652,16 +660,16 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                     }
                 }
                 SimpleTimeline.prototype.add.call(this, value, position);
-                //if the timeline has already ended but the inserted tween/timeline extends the duration, we should enable this timeline again so that it renders properly.
-                if (this._gc) if (!this._paused) if (this._duration < this.duration()) {
-                    //in case any of the anscestors had completed but should now be enabled...
+                //if the timeline has already ended but the inserted tween/timeline extends the duration, we should enable this timeline again so that it renders properly. We should also align the playhead with the parent timeline's when appropriate.
+                if (this._gc || this._time === this._duration) if (!this._paused) if (this._duration < this.duration()) {
+                    //in case any of the ancestors had completed but should now be enabled...
                     tl = this;
                     beforeRawTime = tl.rawTime() > value._startTime;
                     //if the tween is placed on the timeline so that it starts BEFORE the current rawTime, we should align the playhead (move the timeline). This is because sometimes users will create a timeline, let it finish, and much later append a tween and expect it to run instead of jumping to its end state. While technically one could argue that it should jump to its end state, that's not what users intuitively expect.
-                    while (tl._gc && tl._timeline) {
-                        if (tl._timeline.smoothChildTiming && beforeRawTime) {
+                    while (tl._timeline) {
+                        if (beforeRawTime && tl._timeline.smoothChildTiming) {
                             tl.totalTime(tl._totalTime, true);
-                        } else {
+                        } else if (tl._gc) {
                             tl._enabled(true, false);
                         }
                         tl = tl._timeline;
@@ -687,7 +695,7 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                 SimpleTimeline.prototype._remove.call(this, tween, skipDisable);
                 var last = this._last;
                 if (!last) {
-                    this._time = this._totalTime = 0;
+                    this._time = this._totalTime = this._duration = this._totalDuration = 0;
                 } else if (this._time > last._startTime + last._totalDuration / last._timeScale) {
                     this._time = this.duration();
                     this._totalTime = this._totalDuration;
@@ -779,13 +787,13 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                             }
                         }
                     }
-                    this._rawPrevTime = this._duration || !suppressEvents || time ? time : _tinyNum;
+                    this._rawPrevTime = this._duration || !suppressEvents || time || this._rawPrevTime === time ? time : _tinyNum;
                     //when the playhead arrives at EXACTLY time 0 (right on top) of a zero-duration timeline or tween, we need to discern if events are suppressed so that when the playhead moves again (next time), it'll trigger the callback. If events are NOT suppressed, obviously the callback would be triggered in this render. Basically, the callback should fire either when the playhead ARRIVES or LEAVES this exact spot, not both. Imagine doing a timeline.seek(0) and there's a callback that sits at 0. Since events are suppressed on that seek() by default, nothing will fire, but when the playhead moves off of that position, the callback should fire. This behavior is what people intuitively expect. We set the _rawPrevTime to be a precise tiny number to indicate this scenario rather than using another property/variable which would increase memory usage. This technique is less readable, but more efficient.
-                    time = totalDur + 1e-6;
+                    time = totalDur + 1e-4;
                 } else if (time < 1e-7) {
                     //to work around occasional floating point math artifacts, round super small values to 0.
                     this._totalTime = this._time = 0;
-                    if (prevTime !== 0 || this._duration === 0 && (this._rawPrevTime > _tinyNum || time < 0 && this._rawPrevTime >= 0)) {
+                    if (prevTime !== 0 || this._duration === 0 && this._rawPrevTime !== _tinyNum && (this._rawPrevTime > 0 || time < 0 && this._rawPrevTime >= 0)) {
                         callback = "onReverseComplete";
                         isComplete = this._reversed;
                     }
@@ -797,7 +805,7 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                         }
                         this._rawPrevTime = time;
                     } else {
-                        this._rawPrevTime = this._duration || !suppressEvents || time ? time : _tinyNum;
+                        this._rawPrevTime = this._duration || !suppressEvents || time || this._rawPrevTime === time ? time : _tinyNum;
                         //when the playhead arrives at EXACTLY time 0 (right on top) of a zero-duration timeline or tween, we need to discern if events are suppressed so that when the playhead moves again (next time), it'll trigger the callback. If events are NOT suppressed, obviously the callback would be triggered in this render. Basically, the callback should fire either when the playhead ARRIVES or LEAVES this exact spot, not both. Imagine doing a timeline.seek(0) and there's a callback that sits at 0. Since events are suppressed on that seek() by default, nothing will fire, but when the playhead moves off of that position, the callback should fire. This behavior is what people intuitively expect. We set the _rawPrevTime to be a precise tiny number to indicate this scenario rather than using another property/variable which would increase memory usage. This technique is less readable, but more efficient.
                         time = 0;
                         //to avoid occasional floating point rounding errors (could cause problems especially with zero-duration tweens at the very beginning of the timeline)
@@ -1060,7 +1068,7 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
             }, _tinyNum = 1e-10, _blankArray = [], _easeNone = new Ease(null, null, 1, 0), p = TimelineMax.prototype = new TimelineLite();
             p.constructor = TimelineMax;
             p.kill()._gc = false;
-            TimelineMax.version = "1.11.0";
+            TimelineMax.version = "1.11.6";
             p.invalidate = function() {
                 this._yoyo = this.vars.yoyo === true;
                 this._repeat = this.vars.repeat || 0;
@@ -1093,15 +1101,16 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                     overwrite: 2,
                     useFrames: this.usesFrames(),
                     immediateRender: false
-                }, p, t;
+                }, duration, p, t;
                 for (p in vars) {
                     copy[p] = vars[p];
                 }
                 copy.time = this._parseTimeOrLabel(position);
-                t = new TweenLite(this, Math.abs(Number(copy.time) - this._time) / this._timeScale || .001, copy);
+                duration = Math.abs(Number(copy.time) - this._time) / this._timeScale || .001;
+                t = new TweenLite(this, duration, copy);
                 copy.onStart = function() {
                     t.target.paused(true);
-                    if (t.vars.time !== t.target.time()) {
+                    if (t.vars.time !== t.target.time() && duration === t.duration()) {
                         //don't make the duration zero - if it's supposed to be zero, don't worry because it's already initting the tween and will complete immediately, effectively making the duration zero anyway. If we make duration zero, the tween won't run at all.
                         t.duration(Math.abs(t.vars.time - t.target.time()) / t.target._timeScale);
                     }
@@ -1144,13 +1153,13 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                             }
                         }
                     }
-                    this._rawPrevTime = this._duration || !suppressEvents || time ? time : _tinyNum;
+                    this._rawPrevTime = this._duration || !suppressEvents || time || this._rawPrevTime === time ? time : _tinyNum;
                     //when the playhead arrives at EXACTLY time 0 (right on top) of a zero-duration timeline or tween, we need to discern if events are suppressed so that when the playhead moves again (next time), it'll trigger the callback. If events are NOT suppressed, obviously the callback would be triggered in this render. Basically, the callback should fire either when the playhead ARRIVES or LEAVES this exact spot, not both. Imagine doing a timeline.seek(0) and there's a callback that sits at 0. Since events are suppressed on that seek() by default, nothing will fire, but when the playhead moves off of that position, the callback should fire. This behavior is what people intuitively expect. We set the _rawPrevTime to be a precise tiny number to indicate this scenario rather than using another property/variable which would increase memory usage. This technique is less readable, but more efficient.
                     if (this._yoyo && (this._cycle & 1) !== 0) {
                         this._time = time = 0;
                     } else {
                         this._time = dur;
-                        time = dur + 1e-6;
+                        time = dur + 1e-4;
                     }
                 } else if (time < 1e-7) {
                     //to work around occasional floating point math artifacts, round super small values to 0.
@@ -1158,7 +1167,7 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                         this._totalTime = this._cycle = 0;
                     }
                     this._time = 0;
-                    if (prevTime !== 0 || dur === 0 && (prevRawPrevTime > _tinyNum || time < 0 && prevRawPrevTime >= 0) && !this._locked) {
+                    if (prevTime !== 0 || dur === 0 && prevRawPrevTime !== _tinyNum && (prevRawPrevTime > 0 || time < 0 && prevRawPrevTime >= 0) && !this._locked) {
                         //edge case for checking time < 0 && prevRawPrevTime >= 0: a zero-duration fromTo() tween inside a zero-duration timeline (yeah, very rare)
                         callback = "onReverseComplete";
                         isComplete = this._reversed;
@@ -1171,7 +1180,7 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                         }
                         this._rawPrevTime = time;
                     } else {
-                        this._rawPrevTime = dur || !suppressEvents || time ? time : _tinyNum;
+                        this._rawPrevTime = dur || !suppressEvents || time || this._rawPrevTime === time ? time : _tinyNum;
                         //when the playhead arrives at EXACTLY time 0 (right on top) of a zero-duration timeline or tween, we need to discern if events are suppressed so that when the playhead moves again (next time), it'll trigger the callback. If events are NOT suppressed, obviously the callback would be triggered in this render. Basically, the callback should fire either when the playhead ARRIVES or LEAVES this exact spot, not both. Imagine doing a timeline.seek(0) and there's a callback that sits at 0. Since events are suppressed on that seek() by default, nothing will fire, but when the playhead moves off of that position, the callback should fire. This behavior is what people intuitively expect. We set the _rawPrevTime to be a precise tiny number to indicate this scenario rather than using another property/variable which would increase memory usage. This technique is less readable, but more efficient.
                         time = 0;
                         //to avoid occasional floating point rounding errors (could cause problems especially with zero-duration tweens at the very beginning of the timeline)
@@ -1200,7 +1209,7 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                             }
                             if (this._time > dur) {
                                 this._time = dur;
-                                time = dur + 1e-6;
+                                time = dur + 1e-4;
                             } else if (this._time < 0) {
                                 this._time = time = 0;
                             } else {
@@ -1211,13 +1220,13 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                 }
                 if (this._cycle !== prevCycle) if (!this._locked) {
                     /*
-                make sure children at the end/beginning of the timeline are rendered properly. If, for example,
-                a 3-second long timeline rendered at 2.9 seconds previously, and now renders at 3.2 seconds (which
-                would get transated to 2.8 seconds if the timeline yoyos or 0.2 seconds if it just repeats), there
-                could be a callback or a short tween that's at 2.95 or 3 seconds in which wouldn't render. So
-                we need to push the timeline to the end (and/or beginning depending on its yoyo value). Also we must
-                ensure that zero-duration tweens at the very beginning or end of the TimelineMax work.
-                */
+                     make sure children at the end/beginning of the timeline are rendered properly. If, for example,
+                     a 3-second long timeline rendered at 2.9 seconds previously, and now renders at 3.2 seconds (which
+                     would get transated to 2.8 seconds if the timeline yoyos or 0.2 seconds if it just repeats), there
+                     could be a callback or a short tween that's at 2.95 or 3 seconds in which wouldn't render. So
+                     we need to push the timeline to the end (and/or beginning depending on its yoyo value). Also we must
+                     ensure that zero-duration tweens at the very beginning or end of the TimelineMax work.
+                     */
                     var backwards = this._yoyo && (prevCycle & 1) !== 0, wrap = backwards === (this._yoyo && (this._cycle & 1) !== 0), recTotalTime = this._totalTime, recCycle = this._cycle, recRawPrevTime = this._rawPrevTime, recTime = this._time;
                     this._totalTime = prevCycle * dur;
                     if (this._cycle < prevCycle) {
@@ -1227,7 +1236,7 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                     }
                     this._time = prevTime;
                     //temporarily revert _time so that render() renders the children in the correct order. Without this, tweens won't rewind correctly. We could arhictect things in a "cleaner" way by splitting out the rendering queue into a separate method but for performance reasons, we kept it all inside this method.
-                    this._rawPrevTime = dur === 0 ? prevRawPrevTime - 1e-5 : prevRawPrevTime;
+                    this._rawPrevTime = dur === 0 ? prevRawPrevTime - 1e-4 : prevRawPrevTime;
                     this._cycle = prevCycle;
                     this._locked = true;
                     //prevents changes to totalTime and skips repeat/yoyo behavior when we recursively call render()
@@ -1239,7 +1248,7 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                         }
                     }
                     if (wrap) {
-                        prevTime = backwards ? dur + 1e-6 : -1e-6;
+                        prevTime = backwards ? dur + 1e-4 : -1e-4;
                         this.render(prevTime, true, false);
                     }
                     this._locked = false;
@@ -1703,6 +1712,7 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
             }, BezierPlugin = window._gsDefine.plugin({
                 propName: "bezier",
                 priority: -1,
+                version: "1.3.1",
                 API: 2,
                 global: true,
                 //gets called when the tween renders for the first time. This is where initial values should be recorded and any setup routines should run.
@@ -1746,6 +1756,7 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                         this._prec = 1 / this._curSeg.length;
                     }
                     if (autoRotate = this._autoRotate) {
+                        this._initialRotations = [];
                         if (!(autoRotate[0] instanceof Array)) {
                             this._autoRotate = autoRotate = [ autoRotate ];
                         }
@@ -1755,13 +1766,17 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                                 p = autoRotate[i][j];
                                 this._func[p] = typeof target[p] === "function" ? target[p.indexOf("set") || typeof target["get" + p.substr(3)] !== "function" ? p : "get" + p.substr(3)] : false;
                             }
+                            p = autoRotate[i][2];
+                            this._initialRotations[i] = this._func[p] ? this._func[p].call(this._target) : this._target[p];
                         }
                     }
+                    this._startRatio = tween.vars.runBackwards ? 1 : 0;
+                    //we determine the starting ratio when the tween inits which is always 0 unless the tween has runBackwards:true (indicating it's a from() tween) in which case it's 1.
                     return true;
                 },
                 //called each time the values should be updated, and the ratio gets passed as the only parameter (typically it's a value between 0 and 1, but it can exceed those when using an ease like Elastic.easeOut or Back.easeOut, etc.)
                 set: function(v) {
-                    var segments = this._segCount, func = this._func, target = this._target, curIndex, inv, i, p, b, t, val, l, lengths, curSeg;
+                    var segments = this._segCount, func = this._func, target = this._target, notStart = v !== this._startRatio, curIndex, inv, i, p, b, t, val, l, lengths, curSeg;
                     if (!this._timeRes) {
                         curIndex = v < 0 ? 0 : v >= 1 ? segments - 1 : segments * v >> 0;
                         t = (v - curIndex * (1 / segments)) * segments;
@@ -1848,7 +1863,7 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                                 y2 = b2.b + (b2.c - b2.b) * t;
                                 y1 += (y2 - y1) * t;
                                 y2 += (b2.c + (b2.d - b2.c) * t - y2) * t;
-                                val = Math.atan2(y2 - y1, x2 - x1) * conv + add;
+                                val = notStart ? Math.atan2(y2 - y1, x2 - x1) * conv + add : this._initialRotations[i];
                                 if (func[p]) {
                                     target[p](val);
                                 } else {
@@ -1956,9 +1971,10 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
             _overwriteProps, //alias to the currently instantiating CSSPlugin's _overwriteProps array. We use this closure in order to avoid having to pass a reference around from method to method and aid in minification.
             _specialProps = {}, p = CSSPlugin.prototype = new TweenPlugin("css");
             p.constructor = CSSPlugin;
-            CSSPlugin.version = "1.11.2";
+            CSSPlugin.version = "1.11.6";
             CSSPlugin.API = 2;
             CSSPlugin.defaultTransformPerspective = 0;
+            CSSPlugin.defaultSkewType = "compensated";
             p = "px";
             //we'll reuse the "p" variable to keep file size down
             CSSPlugin.suffixMap = {
@@ -1971,7 +1987,8 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                 fontSize: p,
                 padding: p,
                 margin: p,
-                perspective: p
+                perspective: p,
+                lineHeight: ""
             };
             var _numExp = /(?:\d|\-\d|\.\d|\-\.\d)+/g, _relNumExp = /(?:\d|\-\d|\.\d|\-\.\d|\+=\d|\-=\d|\+=.\d|\-=\.\d)+/g, _valuesExp = /(?:\+=|\-=|\-|\b)[\d\-\.]+[a-zA-Z0-9]*(?:%|\b)/gi, //finds all the values that begin with numbers or += or -= and then a number. Includes suffixes. We use this to split complex values apart like "1px 5px 20px rgb(255,102,51)"
             _NaNExp = /[^\d\-\.]/g, _suffixExp = /(?:\d|\-|\+|=|#|\.)*/g, _opacityExp = /opacity *= *([^)]*)/, _opacityValExp = /opacity:([^;]*)/, _alphaFilterExp = /alpha\(opacity *=.+?\)/i, _rgbhslExp = /^(rgb|hsl)/, _capsExp = /([A-Z])/g, _camelExp = /-([a-z])/gi, _urlExp = /(^(?:url\(\"|url\())|(?:(\"\))$|\)$)/gi, //for pulling out urls from url(...) or url("...") strings (some browsers wrap urls in quotes, some don't when reporting things like backgroundImage)
@@ -2005,7 +2022,7 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                 }
             }, _prefixCSS = "", //the non-camelCase vendor prefix like "-o-", "-moz-", "-ms-", or "-webkit-"
             _prefix = "", //camelCase vendor prefix like "O", "ms", "Webkit", or "Moz".
-            //@private feed in a camelCase property name like "transform" and it will check to see if it is valid as-is or if it needs a vendor prefix. It returns the corrected camelCase property name (i.e. "WebkitTransform" or "MozTransform" or "transform" or null if no such property is found, like if the browser is IE8 or before, "transform" won't be found at all)
+            // @private feed in a camelCase property name like "transform" and it will check to see if it is valid as-is or if it needs a vendor prefix. It returns the corrected camelCase property name (i.e. "WebkitTransform" or "MozTransform" or "transform" or null if no such property is found, like if the browser is IE8 or before, "transform" won't be found at all)
             _checkPropPrefix = function(p, e) {
                 e = e || _tempDiv;
                 var s = e.style, a, i;
@@ -2057,7 +2074,7 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                  * @param {boolean=} recurse If true, the call is a recursive one. In some browsers (like IE7/8), occasionally the value isn't accurately reported initially, but if we run the function again it will take effect.
                  * @return {number} value in pixels
                  */
-            _convertToPixels = function(t, p, v, sfx, recurse) {
+            _convertToPixels = _internals.convertToPixels = function(t, p, v, sfx, recurse) {
                 if (sfx === "px" || !sfx) {
                     return v;
                 }
@@ -2086,14 +2103,14 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                     }
                 }
                 return neg ? -pix : pix;
-            }, _calculateOffset = function(t, p, cs) {
+            }, _calculateOffset = _internals.calculateOffset = function(t, p, cs) {
                 //for figuring out "top" or "left" in px when it's "auto". We need to factor in margin with the offsetLeft/offsetTop
                 if (_getStyle(t, "position", cs) !== "absolute") {
                     return 0;
                 }
                 var dim = p === "left" ? "Left" : "Top", v = _getStyle(t, "margin" + dim, cs);
                 return t["offset" + dim] - (_convertToPixels(t, p, parseFloat(v), v.replace(_suffixExp, "")) || 0);
-            }, //@private returns at object containing ALL of the style properties in camelCase and their associated values.
+            }, // @private returns at object containing ALL of the style properties in camelCase and their associated values.
             _getAllStyles = function(t, cs) {
                 var s = {}, i, tr;
                 if (cs = cs || _getComputedStyle(t, null)) {
@@ -2109,7 +2126,7 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                     }
                 } else if (cs = t.currentStyle || t.style) {
                     for (i in cs) {
-                        if (typeof i === "string" && s[i] !== undefined) {
+                        if (typeof i === "string" && s[i] === undefined) {
                             s[i.replace(_camelExp, _camelFunc)] = cs[i];
                         }
                     }
@@ -2134,7 +2151,7 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                     delete s.filters;
                 }
                 return s;
-            }, //@private analyzes two style objects (as returned by _getAllStyles()) and only looks for differences between them that contain tweenable values (like a number or color). It returns an object with a "difs" property which refers to an object containing only those isolated properties and values for tweening, and a "firstMPT" property which refers to the first MiniPropTween instance in a linked list that recorded all the starting values of the different properties so that we can revert to them at the end or beginning of the tween - we don't want the cascading to get messed up. The forceLookup parameter is an optional generic object with properties that should be forced into the results - this is necessary for className tweens that are overwriting others because imagine a scenario where a rollover/rollout adds/removes a class and the user swipes the mouse over the target SUPER fast, thus nothing actually changed yet and the subsequent comparison of the properties would indicate they match (especially when px rounding is taken into consideration), thus no tweening is necessary even though it SHOULD tween and remove those properties after the tween (otherwise the inline styles will contaminate things). See the className SpecialProp code for details.
+            }, // @private analyzes two style objects (as returned by _getAllStyles()) and only looks for differences between them that contain tweenable values (like a number or color). It returns an object with a "difs" property which refers to an object containing only those isolated properties and values for tweening, and a "firstMPT" property which refers to the first MiniPropTween instance in a linked list that recorded all the starting values of the different properties so that we can revert to them at the end or beginning of the tween - we don't want the cascading to get messed up. The forceLookup parameter is an optional generic object with properties that should be forced into the results - this is necessary for className tweens that are overwriting others because imagine a scenario where a rollover/rollout adds/removes a class and the user swipes the mouse over the target SUPER fast, thus nothing actually changed yet and the subsequent comparison of the properties would indicate they match (especially when px rounding is taken into consideration), thus no tweening is necessary even though it SHOULD tween and remove those properties after the tween (otherwise the inline styles will contaminate things). See the className SpecialProp code for details.
             _cssDif = function(t, s1, s2, vars, forceLookup) {
                 var difs = {}, style = t.style, val, p, mpt;
                 for (p in s2) {
@@ -2177,7 +2194,7 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                     v -= parseFloat(_getStyle(t, "border" + a[i] + "Width", cs, true)) || 0;
                 }
                 return v;
-            }, //@private Parses position-related complex strings like "top left" or "50px 10px" or "70% 20%", etc. which are used for things like transformOrigin or backgroundPosition. Optionally decorates a supplied object (recObj) with the following properties: "ox" (offsetX), "oy" (offsetY), "oxp" (if true, "ox" is a percentage not a pixel value), and "oxy" (if true, "oy" is a percentage not a pixel value)
+            }, // @private Parses position-related complex strings like "top left" or "50px 10px" or "70% 20%", etc. which are used for things like transformOrigin or backgroundPosition. Optionally decorates a supplied object (recObj) with the following properties: "ox" (offsetX), "oy" (offsetY), "oxp" (if true, "ox" is a percentage not a pixel value), and "oxy" (if true, "oy" is a percentage not a pixel value)
             _parsePosition = function(v, recObj) {
                 if (v == null || v === "" || v === "auto" || v === "auto auto") {
                     //note: Firefox uses "auto auto" as default whereas Chrome uses "auto".
@@ -2419,7 +2436,7 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                     }
                     return cssp.parse(t, vars, pt, plugin);
                 };
-            }, //@private used when other plugins must tween values first, like BezierPlugin or ThrowPropsPlugin, etc. That plugin's setRatio() gets called first so that the values are updated, and then we loop through the MiniPropTweens  which handle copying the values into their appropriate slots so that they can then be applied correctly in the main CSSPlugin setRatio() method. Remember, we typically create a proxy object that has a bunch of uniquely-named properties that we feed to the sub-plugin and it does its magic normally, and then we must interpret those values and apply them to the css because often numbers must get combined/concatenated, suffixes added, etc. to work with css, like boxShadow could have 4 values plus a color.
+            }, // @private used when other plugins must tween values first, like BezierPlugin or ThrowPropsPlugin, etc. That plugin's setRatio() gets called first so that the values are updated, and then we loop through the MiniPropTweens  which handle copying the values into their appropriate slots so that they can then be applied correctly in the main CSSPlugin setRatio() method. Remember, we typically create a proxy object that has a bunch of uniquely-named properties that we feed to the sub-plugin and it does its magic normally, and then we must interpret those values and apply them to the css because often numbers must get combined/concatenated, suffixes added, etc. to work with css, like boxShadow could have 4 values plus a color.
             _setPluginRatio = _internals._setPluginRatio = function(v) {
                 this.plugin.setRatio(v);
                 var d = this.data, proxy = d.proxy, mpt = d.firstMPT, min = 1e-6, val, pt, i, str;
@@ -2859,12 +2876,12 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
              * Then, your function should return a function which will be called each time the tween gets rendered, passing a numeric "ratio" parameter to your function that indicates the change factor (usually between 0 and 1). For example:
              *
              * CSSPlugin.registerSpecialProp("myCustomProp", function(target, value, tween) {
-             *      var start = target.style.width;
-             *      return function(ratio) {
-             *              target.style.width = (start + value * ratio) + "px";
-             *              console.log("set width to " + target.style.width);
-             *          }
-             * }, 0);
+		 *      var start = target.style.width;
+		 *      return function(ratio) {
+		 *              target.style.width = (start + value * ratio) + "px";
+		 *              console.log("set width to " + target.style.width);
+		 *          }
+		 * }, 0);
              *
              * Then, when I do this tween, it will trigger my special property:
              *
@@ -2889,7 +2906,9 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
             };
             //transform-related methods and properties
             var _transformProps = "scaleX,scaleY,scaleZ,x,y,z,skewX,rotation,rotationX,rotationY,perspective".split(","), _transformProp = _checkPropPrefix("transform"), //the Javascript (camelCase) transform property, like msTransform, WebkitTransform, MozTransform, or OTransform.
-            _transformPropCSS = _prefixCSS + "transform", _transformOriginProp = _checkPropPrefix("transformOrigin"), _supports3D = _checkPropPrefix("perspective") !== null, /**
+            _transformPropCSS = _prefixCSS + "transform", _transformOriginProp = _checkPropPrefix("transformOrigin"), _supports3D = _checkPropPrefix("perspective") !== null, Transform = _internals.Transform = function() {
+                this.skewY = 0;
+            }, /**
                  * Parses the transform values for an element, returning an object with x, y, z, scaleX, scaleY, scaleZ, rotation, rotationX, rotationY, skewX, and skewY properties. Note: by default (for performance reasons), all skewing is combined into skewX and rotation but skewY still has a place in the transform object so that we can record how much of the skew is attributed to skewX vs skewY. Remember, a skewY of 10 looks the same as a rotation of 10 and skewX of -10.
                  * @param {!Object} t target element
                  * @param {Object=} cs computed style object (optional)
@@ -2897,15 +2916,11 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                  * @param {boolean=} parse if true, we'll ignore any _gsTransform values that already exist on the element, and force a reparsing of the css (calculated style)
                  * @return {object} object containing all of the transform properties/values like {x:0, y:0, z:0, scaleX:1...}
                  */
-            _getTransform = function(t, cs, rec, parse) {
+            _getTransform = _internals.getTransform = function(t, cs, rec, parse) {
                 if (t._gsTransform && rec && !parse) {
                     return t._gsTransform;
                 }
-                var tm = rec ? t._gsTransform || {
-                    skewY: 0
-                } : {
-                    skewY: 0
-                }, invX = tm.scaleX < 0, //in order to interpret things properly, we need to know if the user applied a negative scaleX previously so that we can adjust the rotation and skewX accordingly. Otherwise, if we always interpret a flipped matrix as affecting scaleY and the user only wants to tween the scaleX on multiple sequential tweens, it would keep the negative scaleY without that being the user's intent.
+                var tm = rec ? t._gsTransform || new Transform() : new Transform(), invX = tm.scaleX < 0, //in order to interpret things properly, we need to know if the user applied a negative scaleX previously so that we can adjust the rotation and skewX accordingly. Otherwise, if we always interpret a flipped matrix as affecting scaleY and the user only wants to tween the scaleX on multiple sequential tweens, it would keep the negative scaleY without that being the user's intent.
                 min = 2e-5, rnd = 1e5, minAngle = 179.99, minPI = minAngle * _DEG2RAD, zOrigin = _supports3D ? parseFloat(_getStyle(t, _transformOriginProp, cs, false, "0 0 0").split(" ")[2]) || tm.zOrigin || 0 : 0, s, m, i, n, dec, scaleX, scaleY, rotation, skewX, difX, difY, difR, difS;
                 if (_transformProp) {
                     s = _getStyle(t, _transformPropCSS, cs, true);
@@ -3106,20 +3121,10 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                         style[prop] = (t[prop] = Math.round(val - dif * (i === 0 || i === 2 ? 1 : mult))) + "px";
                     }
                 }
-            }, _set3DTransformRatio = function(v) {
+            }, _set3DTransformRatio = _internals.set3DTransformRatio = function(v) {
                 var t = this.data, //refers to the element's _gsTransform object
                 style = this.t.style, angle = t.rotation * _DEG2RAD, sx = t.scaleX, sy = t.scaleY, sz = t.scaleZ, perspective = t.perspective, a11, a12, a13, a14, a21, a22, a23, a24, a31, a32, a33, a34, a41, a42, a43, zOrigin, rnd, cos, sin, t1, t2, t3, t4;
                 if (_isFirefox) {
-                    //Firefox has a
-                    /*
-                    // It seems Firefox fixed the bug that causes 3D elements to randomly disappear during animation unless a repaint is forced (in version 25), so we're commenting out the fix as of CSSPlugin version 1.11.2, but leaving it in the source in case it's useful later. One way we were working around this was change "top" or "bottom" by 0.05 which is imperceptible, so we go back and forth. Another way is to change the display to "none", read the clientTop, and then revert the display but that is much slower.
-                    var ffProp = style.top ? "top" : style.bottom ? "bottom" : parseFloat(_getStyle(this.t, "top", null, false)) ? "bottom" : "top";
-                    t1 = _getStyle(this.t, ffProp, null, false);
-                    n = parseFloat(t1) || 0;
-                    var sfx = t1.substr((n + "").length) || "px";
-                    t._ffFix = !t._ffFix;
-                    style[ffProp] = (t._ffFix ? n + 0.05 : n - 0.05) + sfx;
-                    */
                     var n = 1e-4;
                     if (sx < n && sx > -n) {
                         //Firefox has a bug (at least in v25) that causes it to render the transparent part of 32-bit PNG images as black when displayed inside an iframe and the 3D scale is very small and doesn't change sufficiently enough between renders (like if you use a Power4.easeInOut to scale from 0 to 1 where the beginning values only change a tiny amount to begin the tween before accelerating). In this case, we force the scale to be 0.00002 instead which is visually the same but works around the Firefox issue.
@@ -3142,6 +3147,13 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                         angle -= t.skewX * _DEG2RAD;
                         cos = Math.cos(angle);
                         sin = Math.sin(angle);
+                        if (t.skewType === "simple") {
+                            //by default, we compensate skewing on the other axis to make it look more natural, but you can set the skewType to "simple" to use the uncompensated skewing that CSS does
+                            t1 = Math.tan(t.skewX * _DEG2RAD);
+                            t1 = Math.sqrt(1 + t1 * t1);
+                            cos *= t1;
+                            sin *= t1;
+                        }
                     }
                     a12 = -sin;
                     a22 = cos;
@@ -3217,17 +3229,14 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                 a24 = (t1 = (a24 += t.y) - (a24 |= 0)) ? (t1 * rnd + (t1 < 0 ? -.5 : .5) | 0) / rnd + a24 : a24;
                 a34 = (t1 = (a34 += t.z) - (a34 |= 0)) ? (t1 * rnd + (t1 < 0 ? -.5 : .5) | 0) / rnd + a34 : a34;
                 style[_transformProp] = "matrix3d(" + [ (a11 * rnd | 0) / rnd, (a21 * rnd | 0) / rnd, (a31 * rnd | 0) / rnd, (a41 * rnd | 0) / rnd, (a12 * rnd | 0) / rnd, (a22 * rnd | 0) / rnd, (a32 * rnd | 0) / rnd, (a42 * rnd | 0) / rnd, (a13 * rnd | 0) / rnd, (a23 * rnd | 0) / rnd, (a33 * rnd | 0) / rnd, (a43 * rnd | 0) / rnd, a14, a24, a34, perspective ? 1 + -a34 / perspective : 1 ].join(",") + ")";
-            }, _set2DTransformRatio = function(v) {
+            }, _set2DTransformRatio = _internals.set2DTransformRatio = function(v) {
                 var t = this.data, //refers to the element's _gsTransform object
-                targ = this.t, style = targ.style, ffProp, t1, n, sfx, ang, skew, rnd, sx, sy;
-                if (_isFirefox) {
-                    //Firefox has a bug that causes elements to randomly disappear during animation unless a repaint is forced. One way to do this is change "top" or "bottom" by 0.05 which is imperceptible, so we go back and forth. Another way is to change the display to "none", read the clientTop, and then revert the display but that is much slower.
-                    ffProp = style.top ? "top" : style.bottom ? "bottom" : parseFloat(_getStyle(targ, "top", null, false)) ? "bottom" : "top";
-                    t1 = _getStyle(targ, ffProp, null, false);
-                    n = parseFloat(t1) || 0;
-                    sfx = t1.substr((n + "").length) || "px";
-                    t._ffFix = !t._ffFix;
-                    style[ffProp] = (t._ffFix ? n + .05 : n - .05) + sfx;
+                targ = this.t, style = targ.style, ang, skew, rnd, sx, sy;
+                if (t.rotationX || t.rotationY || t.z || t.force3D) {
+                    //if a 3D tween begins while a 2D one is running, we need to kick the rendering over to the 3D method. For example, imagine a yoyo-ing, infinitely repeating scale tween running, and then the object gets rotated in 3D space with a different tween.
+                    this.setRatio = _set3DTransformRatio;
+                    _set3DTransformRatio.call(this, v);
+                    return;
                 }
                 if (!t.rotation && !t.skewX) {
                     style[_transformProp] = "matrix(" + t.scaleX + ",0,0," + t.scaleY + "," + t.x + "," + t.y + ")";
@@ -3241,7 +3250,7 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                     style[_transformProp] = "matrix(" + (Math.cos(ang) * sx | 0) / rnd + "," + (Math.sin(ang) * sx | 0) / rnd + "," + (Math.sin(skew) * -sy | 0) / rnd + "," + (Math.cos(skew) * sy | 0) / rnd + "," + t.x + "," + t.y + ")";
                 }
             };
-            _registerComplexSpecialProp("transform,scale,scaleX,scaleY,scaleZ,x,y,z,rotation,rotationX,rotationY,rotationZ,skewX,skewY,shortRotation,shortRotationX,shortRotationY,shortRotationZ,transformOrigin,transformPerspective,directionalRotation,parseTransform,force3D", {
+            _registerComplexSpecialProp("transform,scale,scaleX,scaleY,scaleZ,x,y,z,rotation,rotationX,rotationY,rotationZ,skewX,skewY,shortRotation,shortRotationX,shortRotationY,shortRotationZ,transformOrigin,transformPerspective,directionalRotation,parseTransform,force3D,skewType", {
                 parser: function(t, e, p, cssp, pt, plugin, vars) {
                     if (cssp._transform) {
                         return pt;
@@ -3261,7 +3270,7 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                         m2 = {
                             scaleX: _parseVal(v.scaleX != null ? v.scaleX : v.scale, m1.scaleX),
                             scaleY: _parseVal(v.scaleY != null ? v.scaleY : v.scale, m1.scaleY),
-                            scaleZ: _parseVal(v.scaleZ != null ? v.scaleZ : v.scale, m1.scaleZ),
+                            scaleZ: _parseVal(v.scaleZ, m1.scaleZ),
                             x: _parseVal(v.x, m1.x),
                             y: _parseVal(v.y, m1.y),
                             z: _parseVal(v.z, m1.z),
@@ -3290,10 +3299,11 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                             m2.rotation += skewY;
                         }
                     }
-                    if (v.force3D != null) {
+                    if (_supports3D && v.force3D != null) {
                         m1.force3D = v.force3D;
                         hasChange = true;
                     }
+                    m1.skewType = v.skewType || m1.skewType || CSSPlugin.defaultSkewType;
                     has3D = m1.force3D || m1.z || m1.rotationX || m1.rotationY || m2.z || m2.rotationX || m2.rotationY || m2.perspective;
                     if (!has3D && v.scale != null) {
                         m2.scaleZ = 1;
@@ -3514,6 +3524,10 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                     return a[0] + " " + (a[1] || "solid") + " " + (v.match(_colorExp) || [ "#000" ])[0];
                 }
             });
+            _registerComplexSpecialProp("borderWidth", {
+                parser: _getEdgeParser("borderTopWidth,borderRightWidth,borderBottomWidth,borderLeftWidth")
+            });
+            //Firefox doesn't pick up on borderWidth set in style sheets (only inline).
             _registerComplexSpecialProp("float,cssFloat,styleFloat", {
                 parser: function(t, e, p, cssp, pt, plugin) {
                     var s = t.style, prop = "cssFloat" in s ? "cssFloat" : "styleFloat";
@@ -3837,7 +3851,7 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                                 esfx = isStr ? es.substr((en + "").length) || "" : "";
                             }
                             if (esfx === "") {
-                                esfx = _suffixMap[p] || bsfx;
+                                esfx = p in _suffixMap ? _suffixMap[p] : bsfx;
                             }
                             es = en || en === 0 ? (rel ? en + bn : en) + esfx : vars[p];
                             //ensures that any += or -= prefixes are taken care of. Record the end value before normalizing the suffix because we always want to end the tween on exactly what they intended even if it doesn't match the beginning value's suffix.
@@ -3846,10 +3860,6 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                                 bn = _convertToPixels(target, p, bn, bsfx);
                                 if (esfx === "%") {
                                     bn /= _convertToPixels(target, p, 100, "%") / 100;
-                                    if (bn > 100) {
-                                        //extremely rare
-                                        bn = 100;
-                                    }
                                     if (vars.strictUnits !== true) {
                                         //some browsers report only "px" values instead of allowing "%" with getComputedStyle(), so we assume that if we're tweening to a %, we should start there too unless strictUnits:true is defined. This approach is particularly useful for responsive designs that use from() tweens.
                                         bs = bn + "%";
@@ -4147,6 +4157,7 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
         window._gsDefine.plugin({
             propName: "attr",
             API: 2,
+            version: "0.2.0",
             //called when the tween renders for the first time. This is where initial values should be recorded and any setup routines should run.
             init: function(target, value, tween) {
                 var p;
@@ -4180,6 +4191,7 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
         window._gsDefine.plugin({
             propName: "directionalRotation",
             API: 2,
+            version: "0.2.0",
             //called when the tween renders for the first time. This is where initial values should be recorded and any setup routines should run.
             init: function(target, value, tween) {
                 if (typeof value !== "object") {
@@ -4519,7 +4531,7 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
             //works around issues in iframe environments where the Array global isn't shared, thus if the object originates in a different window/iframe, "(obj instanceof Array)" will evaluate false. We added some speed optimizations to avoid Object.prototype.toString.call() unless it's absolutely necessary because it's VERY slow (like 20x slower)
             var toString = Object.prototype.toString, array = toString.call([]);
             return function(obj) {
-                return obj instanceof Array || typeof obj === "object" && !!obj.push && toString.call(obj) === array;
+                return obj != null && (obj instanceof Array || typeof obj === "object" && !!obj.push && toString.call(obj) === array);
             };
         }(), a, i, p, _ticker, _tickerActive, _defLookup = {}, /**
              * @constructor
@@ -4859,19 +4871,19 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
         };
         _checkTimeout();
         p.play = function(from, suppressEvents) {
-            if (arguments.length) {
+            if (from != null) {
                 this.seek(from, suppressEvents);
             }
             return this.reversed(false).paused(false);
         };
         p.pause = function(atTime, suppressEvents) {
-            if (arguments.length) {
+            if (atTime != null) {
                 this.seek(atTime, suppressEvents);
             }
             return this.paused(true);
         };
         p.resume = function(from, suppressEvents) {
-            if (arguments.length) {
+            if (from != null) {
                 this.seek(from, suppressEvents);
             }
             return this.paused(false);
@@ -4883,7 +4895,7 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
             return this.reversed(false).paused(false).totalTime(includeDelay ? -this._delay : 0, suppressEvents !== false, true);
         };
         p.reverse = function(from, suppressEvents) {
-            if (arguments.length) {
+            if (from != null) {
                 this.seek(from || this.totalDuration(), suppressEvents);
             }
             return this.reversed(true).paused(false);
@@ -5069,7 +5081,7 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
             }
             if (value != this._reversed) {
                 this._reversed = value;
-                this.totalTime(this._totalTime, true);
+                this.totalTime(this._timeline && !this._timeline.smoothChildTiming ? this.totalDuration() - this._totalTime : this._totalTime, true);
             }
             return this;
         };
@@ -5267,7 +5279,7 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
         p.ratio = 0;
         p._firstPT = p._targets = p._overwrittenProps = p._startAt = null;
         p._notifyPluginsOfEnabled = false;
-        TweenLite.version = "1.11.2";
+        TweenLite.version = "1.11.6";
         TweenLite.defaultEase = p._ease = new Ease(null, null, 1, 1);
         TweenLite.defaultOverwrite = "auto";
         TweenLite.ticker = _ticker;
@@ -5402,7 +5414,7 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                     if (_checkOverlap(curTween, globalStart, zeroDur) === 0) {
                         overlaps[oCount++] = curTween;
                     }
-                } else if (curTween._startTime <= startTime) if (curTween._startTime + curTween.totalDuration() / curTween._timeScale + _tinyNum > startTime) if (!((zeroDur || !curTween._initted) && startTime - curTween._startTime <= 2e-10)) {
+                } else if (curTween._startTime <= startTime) if (curTween._startTime + curTween.totalDuration() / curTween._timeScale > startTime) if (!((zeroDur || !curTween._initted) && startTime - curTween._startTime <= 2e-10)) {
                     overlaps[oCount++] = curTween;
                 }
             }
@@ -5528,14 +5540,14 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                         this.vars[p] = v = this._swapSelfInParams(v, this);
                     }
                 } else if (_plugins[p] && (plugin = new _plugins[p]())._onInitTween(target, this.vars[p], this)) {
-                    //t - target        [object]
-                    //p - property      [string]
-                    //s - start         [number]
-                    //c - change        [number]
-                    //f - isFunction    [boolean]
-                    //n - name          [string]
-                    //pg - isPlugin     [boolean]
-                    //pr - priority     [number]
+                    //t - target 		[object]
+                    //p - property 		[string]
+                    //s - start			[number]
+                    //c - change		[number]
+                    //f - isFunction	[boolean]
+                    //n - name			[string]
+                    //pg - isPlugin 	[boolean]
+                    //pr - priority		[number]
                     this._firstPT = pt = {
                         _next: this._firstPT,
                         t: plugin,
@@ -5596,19 +5608,23 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                 if (duration === 0) {
                     //zero-duration tweens are tricky because we must discern the momentum/direction of time in order to determine whether the starting values should be rendered or the ending values. If the "playhead" of its timeline goes past the zero-duration tween in the forward direction or lands directly on it, the end values should be rendered, but if the timeline's "playhead" moves past it in the backward direction (from a postitive time to a negative time), the starting values must be rendered.
                     rawPrevTime = this._rawPrevTime;
+                    if (this._startTime === this._timeline._duration) {
+                        //if a zero-duration tween is at the VERY end of a timeline and that timeline renders at its end, it will typically add a tiny bit of cushion to the render time to prevent rounding errors from getting in the way of tweens rendering their VERY end. If we then reverse() that timeline, the zero-duration tween will trigger its onReverseComplete even though technically the playhead didn't pass over it again. It's a very specific edge case we must accommodate.
+                        time = 0;
+                    }
                     if (time === 0 || rawPrevTime < 0 || rawPrevTime === _tinyNum) if (rawPrevTime !== time) {
                         force = true;
                         if (rawPrevTime > _tinyNum) {
                             callback = "onReverseComplete";
                         }
                     }
-                    this._rawPrevTime = rawPrevTime = !suppressEvents || time ? time : _tinyNum;
+                    this._rawPrevTime = rawPrevTime = !suppressEvents || time || this._rawPrevTime === time ? time : _tinyNum;
                 }
             } else if (time < 1e-7) {
                 //to work around occasional floating point math artifacts, round super small values to 0.
                 this._totalTime = this._time = 0;
                 this.ratio = this._ease._calcEnd ? this._ease.getRatio(0) : 0;
-                if (prevTime !== 0 || duration === 0 && this._rawPrevTime > _tinyNum) {
+                if (prevTime !== 0 || duration === 0 && this._rawPrevTime > 0 && this._rawPrevTime !== _tinyNum) {
                     callback = "onReverseComplete";
                     isComplete = this._reversed;
                 }
@@ -5619,7 +5635,7 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                         if (this._rawPrevTime >= 0) {
                             force = true;
                         }
-                        this._rawPrevTime = rawPrevTime = !suppressEvents || time ? time : _tinyNum;
+                        this._rawPrevTime = rawPrevTime = !suppressEvents || time || this._rawPrevTime === time ? time : _tinyNum;
                     }
                 } else if (!this._initted) {
                     //if we render the very beginning (time == 0) of a fromTo(), we must force the render (normal tweens wouldn't need to render at a time of 0 when the prevTime was also 0). This is also mandatory to make sure overwriting kicks in immediately.
@@ -5701,7 +5717,7 @@ define("seedit/tweenMax/0.0.1/tweenMax-debug", [], function(require, exports, mo
                     //if the tween is positioned at the VERY beginning (_startTime 0) of its parent timeline, it's illegal for the playhead to go back further, so we should not render the recorded startAt values.
                     this._startAt.render(time, suppressEvents, force);
                 }
-                if (!suppressEvents) if (!(force && this._time === 0 && prevTime === 0)) {
+                if (!suppressEvents) if (this._time !== prevTime || isComplete) {
                     this._onUpdate.apply(this.vars.onUpdateScope || this, this.vars.onUpdateParams || _blankArray);
                 }
             }
